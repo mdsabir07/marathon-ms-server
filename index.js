@@ -1,7 +1,7 @@
 const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 3000;
 const app = express();
 
@@ -29,13 +29,29 @@ async function run() {
     // Get marathon data from server and send to the client side (2nd api)
     app.get('/marathons', async (req, res) => {
       try {
-        const limit = parseInt(req.query.limit) || 6;
-        const marathons = await marathonCollection.find().limit(limit).toArray();
+        const { limit } = req.query;
+        let query = marathonCollection.find();
+
+        if (limit && limit !== 'all') {
+          const parsedLimit = parseInt(limit);
+          if (!isNaN(parsedLimit) && parsedLimit > 0) {
+            query = query.limit(parsedLimit);
+          }
+        }
+        const marathons = await query.toArray();
         res.send(marathons);
       } catch (error) {
         res.status(500).send({ error: 'Failed to fetch marathons' });
       }
     });
+
+    // Get single marathon by id (3rd api)
+    app.get('/marathon/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const result = await marathonCollection.findOne(filter);
+      res.send(result);
+    })
 
     // Save marathon data to database from the client side (1st api)
     app.post('/add-marathon', async (req, res) => {
