@@ -26,13 +26,24 @@ async function run() {
     const database = client.db('marathon_db');
     const marathonCollection = database.collection('marathons');
 
-    // Save marathon data to database from the client side
+    // Get marathon data from server and send to the client side (2nd api)
+    app.get('/marathons', async (req, res) => {
+      try {
+        const limit = parseInt(req.query.limit) || 6;
+        const marathons = await marathonCollection.find().limit(limit).toArray();
+        res.send(marathons);
+      } catch (error) {
+        res.status(500).send({ error: 'Failed to fetch marathons' });
+      }
+    });
+
+    // Save marathon data to database from the client side (1st api)
     app.post('/add-marathon', async (req, res) => {
       const marathonData = req.body;
       const result = await marathonCollection.insertOne(marathonData);
-      console.log(result);
+      // console.log(result);
       res.status(201).send({ ...result, message: "Marathon data added to db successfully!" });
-    })
+    });
 
 
     // Send a ping to confirm a successful connection
