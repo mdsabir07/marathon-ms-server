@@ -9,21 +9,32 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const uri = "mongodb+srv://assign11_marathon:sazidi66@cluster0.xilbtqj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const uri = process.env.MONGODB_URI;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-    }
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  }
 });
 
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    // Creating database and collection
+    const database = client.db('marathon_db');
+    const marathonCollection = database.collection('marathons');
+
+    // Save marathon data to database from the client side
+    app.post('/add-marathon', async (req, res) => {
+      const marathonData = req.body;
+      const result = await marathonCollection.insertOne(marathonData);
+      console.log(result);
+      res.status(201).send({ ...result, message: "Marathon data added to db successfully!" });
+    })
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -36,9 +47,9 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('Assignment 11 marathon management system server');
+  res.send('Assignment 11 marathon management system server');
 })
 
 app.listen(port, () => {
-    console.log(`Marathon management server running on port ${port}`);
+  console.log(`Marathon management server running on port ${port}`);
 })
