@@ -118,27 +118,51 @@ async function run() {
     });
 
     // Update application
-    app.put('/update/application/:marathonId', async (req, res) => {
+    app.put('/update/application/:id', async (req, res) => {
       try {
-        const id = req.params.marathonId;
-        const orderData = req.body;
-        const updated = await applicationCollection.findByIdAndUpdate(id, orderData, { new: true });
-        res.json(updated);
+        const id = req.params.id;
+        const { _id, ...updateFields } = req.body; // Exclude _id from the update
+
+        const result = await applicationCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updateFields }
+        );
+
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ message: "Application not found" });
+        }
+
+        res.json({ message: "Update successful", updatedId: id });
       } catch (error) {
-        res.status(500).json({ message: "Update failed" });
+        console.error("Update failed:", error);
+        res.status(500).json({ message: "Update failed", error: error.message });
       }
-    })
+    });
+
+
+
+
+
 
     // Delete application
-    app.delete('/delete/application/:marathonId', async (req, res) => {
+    app.delete('/delete/application/:id', async (req, res) => {
       try {
-        const id = req.params.marathonId;
-        await applicationCollection.findByIdAndDelete(id);
-        res.sendStatus(204);
+        const id = req.params.id;
+        console.log("Deleting application with id:", id);
+
+        const result = await applicationCollection.deleteOne({ _id: new ObjectId(id) });
+
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ message: "Application not found" });
+        }
+
+        res.sendStatus(204); // No Content
       } catch (error) {
-        res.status(500).json({ message: "Delete failed" });
+        console.error("Delete failed:", error);
+        res.status(500).json({ message: "Delete failed", error: error.message });
       }
-    })
+    });
+
 
 
     // Send a ping to confirm a successful connection
