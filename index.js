@@ -118,7 +118,7 @@ async function run() {
     });
 
     // Update application
-    app.put('/application/update/:id', async (req, res) => {
+    app.put('/update/application/:id', async (req, res) => {
       try {
         const id = req.params.marathonId;
         const orderData = req.body;
@@ -126,6 +126,17 @@ async function run() {
         res.json(updated);
       } catch (error) {
         res.status(500).json({ message: "Update failed" });
+      }
+    })
+
+    // Delete application
+    app.delete('/delete/application/:id', async (req, res) => {
+      try {
+        const id = req.params.marathonId;
+        await applicationCollection.findByIdAndDelete(id);
+        res.sendStatus(204);
+      } catch (error) {
+        res.status(500).json({ message: "Delete failed" });
       }
     })
 
