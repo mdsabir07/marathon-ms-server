@@ -118,7 +118,7 @@ async function run() {
     });
 
     // Update application
-    app.put('/update/application/:id', async (req, res) => {
+    app.put('/update/application/:marathonId', async (req, res) => {
       try {
         const id = req.params.marathonId;
         const orderData = req.body;
@@ -130,7 +130,7 @@ async function run() {
     })
 
     // Delete application
-    app.delete('/delete/application/:id', async (req, res) => {
+    app.delete('/delete/application/:marathonId', async (req, res) => {
       try {
         const id = req.params.marathonId;
         await applicationCollection.findByIdAndDelete(id);
