@@ -81,6 +81,14 @@ async function run() {
 
     // ======================
     // Registration/Application related api's
+
+    // Get application data from db and display to client side
+    app.get('/applications', async (req, res) => {
+      const allApplications = await applicationCollection.find().toArray();
+      res.send(allApplications);
+    })
+
+    // Save application data to db from the client side
     app.post('/applications', async (req, res) => {
       const application = req.body;
 
