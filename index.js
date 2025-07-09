@@ -79,6 +79,61 @@ async function run() {
       res.status(201).send({ ...result, message: "Marathon data added to db successfully!" });
     });
 
+    // My marathons
+    // GET user marathons
+    app.get('/my-marathons/:email', async (req, res) => {
+      try {
+        const list = await marathonCollection.find({ email: req.params.email }).toArray();
+        res.json(list);
+      } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: 'Failed to load marathons' });
+      }
+    });
+
+    // UPDATE marathon
+    app.put('/update/marathon/:id', async (req, res) => {
+      const id = req.params.id;
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      const updateData = { ...req.body };
+      delete updateData._id;
+
+      try {
+        const result = await marathonCollection.findOneAndUpdate(
+          { _id: new ObjectId(id) },
+          { $set: updateData },
+          { returnDocument: 'after' }
+        );
+        if (!result.value) {
+          return res.status(404).json({ message: 'Marathon not found' });
+        }
+        res.json(result.value);
+      } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: 'Update failed' });
+      }
+    });
+    
+    // Delete marathon
+    app.delete('/delete/marathon/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const result = await marathonCollection.deleteOne({ _id: new ObjectId(id) });
+
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ message: "Marathon not found" });
+        }
+
+        res.sendStatus(204); // Success: No Content
+      } catch (error) {
+        console.error("Error deleting marathon:", error);
+        res.status(500).json({ message: "Failed to delete marathon" });
+      }
+    });
+
+
     // ======================
     // Registration/Application related api's
 
@@ -138,10 +193,6 @@ async function run() {
         res.status(500).json({ message: "Update failed", error: error.message });
       }
     });
-
-
-
-
 
 
     // Delete application
