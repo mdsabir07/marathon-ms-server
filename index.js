@@ -83,8 +83,10 @@ async function run() {
     // Registration/Application related api's
 
     // Get application data from db and display to client side
-    app.get('/applications', async (req, res) => {
-      const allApplications = await applicationCollection.find().toArray();
+    app.get('/my-applications/:email', async (req, res) => {
+      const email = req.params.email;
+      const filter = { email }
+      const allApplications = await applicationCollection.find(filter).toArray();
       res.send(allApplications);
     })
 
@@ -114,6 +116,18 @@ async function run() {
         res.status(500).send({ message: "Server error during registration" });
       }
     });
+
+    // Update application
+    app.put('/application/update/:id', async (req, res) => {
+      try {
+        const id = req.params.marathonId;
+        const orderData = req.body;
+        const updated = await applicationCollection.findByIdAndUpdate(id, orderData, { new: true });
+        res.json(updated);
+      } catch (error) {
+        res.status(500).json({ message: "Update failed" });
+      }
+    })
 
 
     // Send a ping to confirm a successful connection
