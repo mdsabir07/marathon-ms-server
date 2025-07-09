@@ -115,17 +115,15 @@ async function run() {
         res.status(500).json({ message: 'Update failed' });
       }
     });
-    
+
     // Delete marathon
     app.delete('/delete/marathon/:id', async (req, res) => {
       try {
         const id = req.params.id;
         const result = await marathonCollection.deleteOne({ _id: new ObjectId(id) });
-
         if (result.deletedCount === 0) {
           return res.status(404).json({ message: "Marathon not found" });
         }
-
         res.sendStatus(204); // Success: No Content
       } catch (error) {
         console.error("Error deleting marathon:", error);
@@ -140,7 +138,11 @@ async function run() {
     // Get application data from db and display to client side
     app.get('/my-applications/:email', async (req, res) => {
       const email = req.params.email;
+      const titleQuery = req.query.title;
       const filter = { email }
+      if (titleQuery) {
+        filter.marathonTitle = { $regex: titleQuery, $options: 'i' }
+      }
       const allApplications = await applicationCollection.find(filter).toArray();
       res.send(allApplications);
     })
@@ -148,24 +150,18 @@ async function run() {
     // Save application data to db from the client side
     app.post('/applications', async (req, res) => {
       const application = req.body;
-
       try {
-        // 1. Insert the application
         const result = await applicationCollection.insertOne(application);
-
-        // 2. Increment registration count on related marathon
         if (application.marathonId) {
           await marathonCollection.updateOne(
             { _id: new ObjectId(application.marathonId) },
             { $inc: { totalRegistrationCount: 1 } }
           );
         }
-
         res.status(201).send({
           ...result,
           message: "Registration/Application successful and count updated"
         });
-
       } catch (err) {
         console.error("Error in application POST:", err);
         res.status(500).send({ message: "Server error during registration" });
@@ -176,17 +172,14 @@ async function run() {
     app.put('/update/application/:id', async (req, res) => {
       try {
         const id = req.params.id;
-        const { _id, ...updateFields } = req.body; // Exclude _id from the update
-
+        const { _id, ...updateFields } = req.body;
         const result = await applicationCollection.updateOne(
           { _id: new ObjectId(id) },
           { $set: updateFields }
         );
-
         if (result.matchedCount === 0) {
           return res.status(404).json({ message: "Application not found" });
         }
-
         res.json({ message: "Update successful", updatedId: id });
       } catch (error) {
         console.error("Update failed:", error);
@@ -199,14 +192,10 @@ async function run() {
     app.delete('/delete/application/:id', async (req, res) => {
       try {
         const id = req.params.id;
-        console.log("Deleting application with id:", id);
-
         const result = await applicationCollection.deleteOne({ _id: new ObjectId(id) });
-
         if (result.deletedCount === 0) {
           return res.status(404).json({ message: "Application not found" });
         }
-
         res.sendStatus(204); // No Content
       } catch (error) {
         console.error("Delete failed:", error);
