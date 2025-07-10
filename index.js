@@ -7,6 +7,12 @@ const app = express();
 
 // Middleware
 app.use(cors());
+app.use(
+  cors({
+    origin: ['http://localhost:5173', 'https://b11a11-server-side-mdsabir07.vercel.app'],
+    credentials: true,
+  }),
+)
 app.use(express.json());
 
 const uri = process.env.MONGODB_URI;
