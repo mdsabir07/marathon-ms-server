@@ -69,8 +69,6 @@ async function run() {
       }
     });
 
-
-
     // Get single marathon by id (3rd api)
     app.get('/marathon/:id', async (req, res) => {
       const id = req.params.id;
