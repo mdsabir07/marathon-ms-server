@@ -33,36 +33,43 @@ async function run() {
     const marathonCollection = database.collection('marathons');
     const applicationCollection = database.collection('applications');
 
-    // Get marathon data from server and send to the client side (2nd api)
     app.get('/marathons', async (req, res) => {
       try {
         const { limit, featured, sort, order } = req.query;
+
+        // ✅ Always string-check
         const query = {};
-        if (featured === 'true') {
+        if (String(featured) === 'true') {
           query.featured = true;
         }
 
         let cursor = marathonCollection.find(query);
 
-        // Apply sorting
         if (sort) {
           const sortOrder = order === 'asc' ? 1 : -1;
           cursor = cursor.sort({ [sort]: sortOrder });
         }
 
-        // Apply limit
         if (limit && limit !== 'all') {
           const parsedLimit = parseInt(limit);
           if (!isNaN(parsedLimit) && parsedLimit > 0) {
             cursor = cursor.limit(parsedLimit);
           }
         }
+
+        console.log('👉 Final Query:', query);
+        console.log('👉 Sort:', sort, order);
+        console.log('👉 Limit:', limit);
+
         const marathons = await cursor.toArray();
         res.send(marathons);
       } catch (error) {
+        console.error('❌ Failed to fetch marathons:', error);
         res.status(500).send({ error: 'Failed to fetch marathons' });
       }
     });
+
+
 
     // Get single marathon by id (3rd api)
     app.get('/marathon/:id', async (req, res) => {
@@ -91,10 +98,27 @@ async function run() {
 
     // Save marathon data to database from the client side (1st api)
     app.post('/add-marathon', async (req, res) => {
-      const marathonData = req.body;
-      const result = await marathonCollection.insertOne(marathonData);
-      // console.log(result);
-      res.status(201).send({ ...result, message: "Marathon data added to db successfully!" });
+      try {
+        const marathonData = req.body;
+
+        // Convert `marathonDate` (string) to a Date object if it's provided
+        if (marathonData.marathonDate) {
+          const parsedDate = new Date(marathonData.marathonDate);
+          if (!isNaN(parsedDate)) {
+            marathonData.marathonDate = parsedDate; // ✅ convert to Date
+          }
+        }
+
+        // Add `createdAt` timestamp
+        marathonData.createdAt = new Date(); // ✅ for sorting recent marathons
+
+        const result = await marathonCollection.insertOne(marathonData);
+        // console.log(result);
+        res.status(201).send({ ...result, message: "Marathon data added to db successfully!" });
+      } catch (error) {
+        console.error("❌ Error adding marathon:", error);
+        res.status(500).send({ error: "Failed to add marathon" });
+      }
     });
 
     // My marathons
