@@ -36,16 +36,28 @@ async function run() {
     // Get marathon data from server and send to the client side (2nd api)
     app.get('/marathons', async (req, res) => {
       try {
-        const { limit } = req.query;
-        let query = marathonCollection.find();
+        const { limit, featured, sort, order } = req.query;
+        const query = {};
+        if (featured === 'true') {
+          query.featured = true;
+        }
 
+        let cursor = marathonCollection.find(query);
+
+        // Apply sorting
+        if (sort) {
+          const sortOrder = order === 'asc' ? 1 : -1;
+          cursor = cursor.sort({ [sort]: sortOrder });
+        }
+
+        // Apply limit
         if (limit && limit !== 'all') {
           const parsedLimit = parseInt(limit);
           if (!isNaN(parsedLimit) && parsedLimit > 0) {
-            query = query.limit(parsedLimit);
+            cursor = cursor.limit(parsedLimit);
           }
         }
-        const marathons = await query.toArray();
+        const marathons = await cursor.toArray();
         res.send(marathons);
       } catch (error) {
         res.status(500).send({ error: 'Failed to fetch marathons' });
